@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Score Game Kartu</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+margin:20px;
+text-align:center;
+}
+
+.container{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:15px;
+margin-bottom:20px;
+}
+
+.player{
+background:white;
+padding:15px;
+border-radius:10px;
+width:220px;
+box-shadow:0 0 8px rgba(0,0,0,0.15);
+}
+
+.name{
+width:100%;
+border:none;
+font-weight:bold;
+text-align:center;
+font-size:16px;
+margin-bottom:5px;
+}
+
+.total{
+font-size:30px;
+color:red;
+margin-bottom:10px;
+}
+
+.quick{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:6px;
+margin-bottom:8px;
+}
+
+.quick button{
+padding:8px;
+border:none;
+cursor:pointer;
+font-size:12px;
+}
+
+.pos{
+background:#27ae60;
+color:white;
+}
+
+.neg{
+background:#e74c3c;
+color:white;
+}
+
+.scoreInput{
+width:100%;
+padding:7px;
+margin-bottom:6px;
+}
+
+.undo{
+background:#f39c12;
+color:white;
+border:none;
+padding:6px;
+width:100%;
+margin-top:4px;
+}
+
+.controls{
+margin-bottom:20px;
+}
+
+.controls button{
+padding:8px 12px;
+margin:4px;
+cursor:pointer;
+}
+
+.nextRoundBox{
+margin:20px 0;
+}
+
+.nextRoundBox button{
+font-size:20px;
+padding:14px 28px;
+background:#2980b9;
+color:white;
+border:none;
+border-radius:6px;
+}
+
+table{
+width:100%;
+max-width:900px;
+margin:auto;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:6px;
+text-align:center;
+}
+
+th{
+background:#eee;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Score Game Kartu</h2>
+
+<div class="controls">
+
+<button onclick="addPlayer()">Tambah Pemain</button>
+
+<button onclick="removePlayer()">Hapus Pemain</button>
+
+<button onclick="resetGame()">Reset Game</button>
+
+</div>
+
+<div id="players" class="container"></div>
+
+<div class="nextRoundBox">
+<button onclick="nextRound()">NEXT RONDE</button>
+</div>
+
+<table id="history">
+
+<thead>
+<tr id="headerRow">
+<th>Ronde</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<script>
+
+let players=[]
+let history=[[]]
+let round=0
+let actions=[]
+
+for(let i=1;i<=4;i++){
+players.push({
+name:"Player "+i,
+total:0
+})
+}
+
+function renderPlayers(){
+
+let container=document.getElementById("players")
+container.innerHTML=""
+
+players.forEach((p,i)=>{
+
+let div=document.createElement("div")
+div.className="player"
+
+div.innerHTML=`
+
+<input class="name" value="${p.name}" onchange="changeName(${i},this.value)">
+
+<div class="total">${p.total}</div>
+
+<div class="quick">
+
+<button class="pos" onclick="addScore(${i},250)">Masuk Joker +250</button>
+
+<button class="pos" onclick="addScore(${i},150)">Masuk AS +150</button>
+
+<button class="neg" onclick="addScore(${i},-250)">Kena Joker -250</button>
+
+<button class="neg" onclick="addScore(${i},-150)">Kena AS -150</button>
+
+</div>
+
+<input type="number" inputmode="numeric"
+class="scoreInput"
+placeholder="input poin bebas"
+onkeydown="enterScore(event,${i},this)">
+
+<button onclick="manualAdd(${i},this)">Tambah</button>
+
+<button class="undo" onclick="undoPlayer(${i})">UNDO</button>
+
+`
+
+container.appendChild(div)
+
+})
+
+updateTotals()
+
+}
+
+function changeName(i,name){
+players[i].name=name
+renderHeader()
+}
+
+function renderHeader(){
+
+let row=document.getElementById("headerRow")
+
+row.innerHTML="<th>Ronde</th>"
+
+players.forEach(p=>{
+row.innerHTML+=`<th>${p.name}</th>`
+})
+
+}
+
+function renderHistory(){
+
+let tbody=document.querySelector("#history tbody")
+tbody.innerHTML=""
+
+history.forEach((r,i)=>{
+
+let tr=document.createElement("tr")
+
+let html=`<td>${i+1}</td>`
+
+players.forEach((p,pi)=>{
+html+=`<td>${r[pi] ?? ""}</td>`
+})
+
+tr.innerHTML=html
+tbody.appendChild(tr)
+
+})
+
+}
+
+function updateTotals(){
+
+document.querySelectorAll(".total").forEach((el,i)=>{
+el.innerText=players[i].total
+})
+
+}
+
+function addScore(player,value){
+
+players[player].total += value
+
+history[round][player]=(history[round][player]||0)+value
+
+actions.push({
+player:player,
+value:value,
+round:round
+})
+
+updateTotals()
+renderHistory()
+
+}
+
+function manualAdd(player,input){
+
+let val=parseInt(input.previousElementSibling.value)
+
+if(!isNaN(val)){
+addScore(player,val)
+input.previousElementSibling.value=""
+}
+
+}
+
+function enterScore(e,player,input){
+
+if(e.key==="Enter"){
+
+let val=parseInt(input.value)
+
+if(!isNaN(val)){
+addScore(player,val)
+input.value=""
+}
+
+}
+
+}
+
+function undoPlayer(player){
+
+for(let i=actions.length-1;i>=0;i--){
+
+if(actions[i].player===player){
+
+let act=actions[i]
+
+players[player].total -= act.value
+
+history[act.round][player] -= act.value
+
+actions.splice(i,1)
+
+updateTotals()
+renderHistory()
+
+return
+}
+
+}
+
+alert("Tidak ada aksi untuk di undo")
+
+}
+
+function nextRound(){
+
+round++
+history.push([])
+renderHistory()
+
+}
+
+function addPlayer(){
+
+players.push({
+name:"Player "+(players.length+1),
+total:0
+})
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+}
+
+function removePlayer(){
+
+if(players.length<=1){
+alert("Minimal 1 pemain")
+return
+}
+
+if(!confirm("Hapus pemain terakhir?")) return
+
+players.pop()
+
+history.forEach(r=>{
+r.pop()
+})
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+}
+
+function resetGame(){
+
+if(!confirm("Reset semua skor?")) return
+
+players.forEach(p=>p.total=0)
+
+history=[[]]
+round=0
+actions=[]
+
+updateTotals()
+renderHistory()
+
+}
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+</script>
+
+</body>
+</html>
