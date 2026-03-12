@@ -27,8 +27,20 @@ margin-bottom:20px;
 background:white;
 padding:15px;
 border-radius:10px;
-width:220px;
+width:230px;
 box-shadow:0 0 8px rgba(0,0,0,0.15);
+}
+
+.bad{
+border:3px solid red;
+}
+
+.warn{
+border:3px solid #f1c40f;
+}
+
+.good{
+border:3px solid #27ae60;
 }
 
 .name{
@@ -41,9 +53,18 @@ margin-bottom:5px;
 }
 
 .total{
-font-size:30px;
+font-size:32px;
+margin-bottom:6px;
+}
+
+.shuffle{
+font-size:14px;
+margin-bottom:8px;
+}
+
+.label{
 color:red;
-margin-bottom:10px;
+font-weight:bold;
 }
 
 .quick{
@@ -76,13 +97,22 @@ padding:7px;
 margin-bottom:6px;
 }
 
+.bigAdd{
+background:#3498db;
+color:white;
+border:none;
+padding:10px;
+width:100%;
+font-size:16px;
+margin-bottom:5px;
+}
+
 .undo{
 background:#f39c12;
 color:white;
 border:none;
 padding:6px;
 width:100%;
-margin-top:4px;
 }
 
 .controls{
@@ -126,6 +156,16 @@ th{
 background:#eee;
 }
 
+.posText{
+color:#27ae60;
+font-weight:bold;
+}
+
+.negText{
+color:#e74c3c;
+font-weight:bold;
+}
+
 </style>
 </head>
 
@@ -136,9 +176,7 @@ background:#eee;
 <div class="controls">
 
 <button onclick="addPlayer()">Tambah Pemain</button>
-
 <button onclick="removePlayer()">Hapus Pemain</button>
-
 <button onclick="resetGame()">Reset Game</button>
 
 </div>
@@ -167,12 +205,11 @@ let players=[]
 let history=[[]]
 let round=0
 let actions=[]
+let shuffleCount=[]
 
 for(let i=1;i<=4;i++){
-players.push({
-name:"Player "+i,
-total:0
-})
+players.push({name:"Player "+i,total:0})
+shuffleCount.push(0)
 }
 
 function renderPlayers(){
@@ -180,16 +217,32 @@ function renderPlayers(){
 let container=document.getElementById("players")
 container.innerHTML=""
 
+let totals=players.map(p=>p.total)
+let min=Math.min(...totals)
+
 players.forEach((p,i)=>{
 
 let div=document.createElement("div")
-div.className="player"
+
+let diff=p.total-min
+
+let cls="good"
+if(p.total===min) cls="bad"
+else if(diff<200) cls="warn"
+
+div.className="player "+cls
+
+let label=p.total===min ? "<div class='label'>PENGOCOK HANDAL</div>" : ""
 
 div.innerHTML=`
+
+${label}
 
 <input class="name" value="${p.name}" onchange="changeName(${i},this.value)">
 
 <div class="total">${p.total}</div>
+
+<div class="shuffle">Mengocok : ${shuffleCount[i]}x</div>
 
 <div class="quick">
 
@@ -208,7 +261,7 @@ class="scoreInput"
 placeholder="input poin bebas"
 onkeydown="enterScore(event,${i},this)">
 
-<button onclick="manualAdd(${i},this)">Tambah</button>
+<button class="bigAdd" onclick="manualAdd(${i},this)">TAMBAH POIN</button>
 
 <button class="undo" onclick="undoPlayer(${i})">UNDO</button>
 
@@ -230,7 +283,6 @@ renderHeader()
 function renderHeader(){
 
 let row=document.getElementById("headerRow")
-
 row.innerHTML="<th>Ronde</th>"
 
 players.forEach(p=>{
@@ -244,29 +296,36 @@ function renderHistory(){
 let tbody=document.querySelector("#history tbody")
 tbody.innerHTML=""
 
-history.forEach((r,i)=>{
+for(let i=history.length-1;i>=0;i--){
 
+let r=history[i]
 let tr=document.createElement("tr")
 
 let html=`<td>${i+1}</td>`
 
 players.forEach((p,pi)=>{
-html+=`<td>${r[pi] ?? ""}</td>`
+
+let val=r[pi] ?? ""
+
+let cls=""
+if(val>0) cls="posText"
+if(val<0) cls="negText"
+
+html+=`<td class="${cls}">${val||""}</td>`
+
 })
 
 tr.innerHTML=html
 tbody.appendChild(tr)
 
-})
+}
 
 }
 
 function updateTotals(){
-
 document.querySelectorAll(".total").forEach((el,i)=>{
 el.innerText=players[i].total
 })
-
 }
 
 function addScore(player,value){
@@ -283,6 +342,7 @@ round:round
 
 updateTotals()
 renderHistory()
+renderPlayers()
 
 }
 
@@ -321,13 +381,13 @@ if(actions[i].player===player){
 let act=actions[i]
 
 players[player].total -= act.value
-
 history[act.round][player] -= act.value
 
 actions.splice(i,1)
 
 updateTotals()
 renderHistory()
+renderPlayers()
 
 return
 }
@@ -338,10 +398,53 @@ alert("Tidak ada aksi untuk di undo")
 
 }
 
+function getShuffler(){
+
+let min=Math.min(...players.map(p=>p.total))
+
+let candidates=[]
+
+players.forEach((p,i)=>{
+if(p.total===min) candidates.push(i)
+})
+
+if(candidates.length===1) return candidates[0]
+
+for(let r=round;r>=0;r--){
+
+let minVal=Infinity
+let chosen=null
+
+candidates.forEach(i=>{
+let val=history[r][i] ?? 0
+if(val<minVal){
+minVal=val
+chosen=i
+}
+})
+
+let check=candidates.filter(i=>(history[r][i] ?? 0)===minVal)
+
+if(check.length===1) return chosen
+
+candidates=check
+
+}
+
+return candidates[0]
+
+}
+
 function nextRound(){
+
+let shuffler=getShuffler()
+
+shuffleCount[shuffler]++
 
 round++
 history.push([])
+
+renderPlayers()
 renderHistory()
 
 }
@@ -352,6 +455,8 @@ players.push({
 name:"Player "+(players.length+1),
 total:0
 })
+
+shuffleCount.push(0)
 
 renderPlayers()
 renderHeader()
@@ -369,6 +474,7 @@ return
 if(!confirm("Hapus pemain terakhir?")) return
 
 players.pop()
+shuffleCount.pop()
 
 history.forEach(r=>{
 r.pop()
@@ -389,8 +495,9 @@ players.forEach(p=>p.total=0)
 history=[[]]
 round=0
 actions=[]
+shuffleCount=players.map(()=>0)
 
-updateTotals()
+renderPlayers()
 renderHistory()
 
 }
