@@ -31,17 +31,9 @@ width:230px;
 box-shadow:0 0 8px rgba(0,0,0,0.15);
 }
 
-.bad{
-border:3px solid red;
-}
-
-.warn{
-border:3px solid #f1c40f;
-}
-
-.good{
-border:3px solid #27ae60;
-}
+.bad{border:3px solid red;}
+.warn{border:3px solid #f1c40f;}
+.good{border:3px solid #27ae60;}
 
 .name{
 width:100%;
@@ -49,7 +41,13 @@ border:none;
 font-weight:bold;
 text-align:center;
 font-size:16px;
-margin-bottom:5px;
+margin-bottom:4px;
+}
+
+.label{
+color:red;
+font-weight:bold;
+margin-bottom:6px;
 }
 
 .total{
@@ -60,11 +58,6 @@ margin-bottom:6px;
 .shuffle{
 font-size:14px;
 margin-bottom:8px;
-}
-
-.label{
-color:red;
-font-weight:bold;
 }
 
 .quick{
@@ -152,9 +145,7 @@ padding:6px;
 text-align:center;
 }
 
-th{
-background:#eee;
-}
+th{background:#eee;}
 
 .posText{
 color:#27ae60;
@@ -174,11 +165,9 @@ font-weight:bold;
 <h2>Score Game Kartu</h2>
 
 <div class="controls">
-
 <button onclick="addPlayer()">Tambah Pemain</button>
 <button onclick="removePlayer()">Hapus Pemain</button>
 <button onclick="resetGame()">Reset Game</button>
-
 </div>
 
 <div id="players" class="container"></div>
@@ -217,28 +206,41 @@ function renderPlayers(){
 let container=document.getElementById("players")
 container.innerHTML=""
 
-let totals=players.map(p=>p.total)
-let min=Math.min(...totals)
+let gameStarted = actions.length > 0
+
+let totals = players.map(p=>p.total)
+let min = Math.min(...totals)
 
 players.forEach((p,i)=>{
 
 let div=document.createElement("div")
 
+let cls=""
+let label=""
+
+if(gameStarted){
+
 let diff=p.total-min
 
-let cls="good"
-if(p.total===min) cls="bad"
-else if(diff<200) cls="warn"
+cls="good"
+
+if(p.total===min){
+cls="bad"
+label="<div class='label'>PENGOCOK HANDAL</div>"
+}
+else if(diff<200){
+cls="warn"
+}
+
+}
 
 div.className="player "+cls
 
-let label=p.total===min ? "<div class='label'>PENGOCOK HANDAL</div>" : ""
-
 div.innerHTML=`
 
-${label}
-
 <input class="name" value="${p.name}" onchange="changeName(${i},this.value)">
+
+${label}
 
 <div class="total">${p.total}</div>
 
@@ -247,11 +249,8 @@ ${label}
 <div class="quick">
 
 <button class="pos" onclick="addScore(${i},250)">Masuk Joker +250</button>
-
 <button class="pos" onclick="addScore(${i},150)">Masuk AS +150</button>
-
 <button class="neg" onclick="addScore(${i},-250)">Kena Joker -250</button>
-
 <button class="neg" onclick="addScore(${i},-150)">Kena AS -150</button>
 
 </div>
@@ -340,7 +339,6 @@ value:value,
 round:round
 })
 
-updateTotals()
 renderHistory()
 renderPlayers()
 
@@ -385,7 +383,6 @@ history[act.round][player] -= act.value
 
 actions.splice(i,1)
 
-updateTotals()
 renderHistory()
 renderPlayers()
 
@@ -437,9 +434,12 @@ return candidates[0]
 
 function nextRound(){
 
-let shuffler=getShuffler()
+if(actions.length>0){
 
+let shuffler=getShuffler()
 shuffleCount[shuffler]++
+
+}
 
 round++
 history.push([])
