@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Score Game</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#1e272e;
+color:white;
+margin:0;
+text-align:center;
+}
+
+h1{
+margin:10px;
+}
+
+.container{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:10px;
+padding:10px;
+}
+
+.player{
+background:#2f3640;
+border-radius:10px;
+padding:12px;
+width:220px;
+}
+
+.name{
+width:100%;
+border:none;
+background:none;
+color:white;
+font-size:18px;
+text-align:center;
+}
+
+.total{
+font-size:40px;
+color:#fbc531;
+margin:10px 0;
+}
+
+.buttons{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:6px;
+}
+
+.buttons button{
+padding:12px;
+font-size:14px;
+border:none;
+border-radius:6px;
+}
+
+.green{
+background:#44bd32;
+color:white;
+}
+
+.red{
+background:#e84118;
+color:white;
+}
+
+.undo{
+background:#fbc531;
+color:black;
+margin-top:6px;
+width:100%;
+padding:10px;
+}
+
+.next{
+margin:15px;
+}
+
+.next button{
+font-size:26px;
+padding:16px 40px;
+background:#0097e6;
+color:white;
+border:none;
+border-radius:8px;
+}
+
+table{
+width:100%;
+background:white;
+color:black;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:6px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Score Game</h1>
+
+<div id="players" class="container"></div>
+
+<div class="next">
+<button onclick="nextRound()">NEXT RONDE</button>
+</div>
+
+<table id="history">
+
+<thead>
+
+<tr id="header">
+
+<th>Ronde</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<script>
+
+let players=[]
+let history=[[]]
+let actions=[]
+let round=0
+
+for(let i=1;i<=4;i++){
+
+players.push({
+name:"Player "+i,
+total:0
+})
+
+}
+
+function renderPlayers(){
+
+let div=document.getElementById("players")
+div.innerHTML=""
+
+players.forEach((p,i)=>{
+
+div.innerHTML+=`
+
+<div class="player">
+
+<input class="name" value="${p.name}" onchange="changeName(${i},this.value)">
+
+<div class="total">${p.total}</div>
+
+<div class="buttons">
+
+<button class="green" onclick="addScore(${i},250)">JOKER +250</button>
+
+<button class="green" onclick="addScore(${i},150)">AS +150</button>
+
+<button class="red" onclick="addScore(${i},-250)">KENA JOKER</button>
+
+<button class="red" onclick="addScore(${i},-150)">KENA AS</button>
+
+</div>
+
+<button class="undo" onclick="undo(${i})">UNDO</button>
+
+</div>
+
+`
+
+})
+
+updateTotals()
+
+}
+
+function updateTotals(){
+
+document.querySelectorAll(".total").forEach((el,i)=>{
+
+el.innerText=players[i].total
+
+})
+
+}
+
+function addScore(player,value){
+
+players[player].total+=value
+
+history[round][player]=(history[round][player]||0)+value
+
+actions.push({player,value,round})
+
+updateTotals()
+
+renderHistory()
+
+}
+
+function undo(player){
+
+for(let i=actions.length-1;i>=0;i--){
+
+if(actions[i].player===player){
+
+let act=actions[i]
+
+players[player].total-=act.value
+
+history[act.round][player]-=act.value
+
+actions.splice(i,1)
+
+updateTotals()
+
+renderHistory()
+
+return
+
+}
+
+}
+
+}
+
+function nextRound(){
+
+round++
+
+history.push([])
+
+renderHistory()
+
+}
+
+function changeName(i,name){
+
+players[i].name=name
+
+renderHeader()
+
+}
+
+function renderHeader(){
+
+let row=document.getElementById("header")
+
+row.innerHTML="<th>Ronde</th>"
+
+players.forEach(p=>{
+
+row.innerHTML+=`<th>${p.name}</th>`
+
+})
+
+}
+
+function renderHistory(){
+
+let body=document.querySelector("#history tbody")
+
+body.innerHTML=""
+
+history.forEach((r,i)=>{
+
+let html=`<tr><td>${i+1}</td>`
+
+players.forEach((p,pi)=>{
+
+html+=`<td>${r[pi]||""}</td>`
+
+})
+
+html+="</tr>"
+
+body.innerHTML+=html
+
+})
+
+}
+
+renderPlayers()
+
+renderHeader()
+
+renderHistory()
+
+</script>
+
+</body>
+</html>
