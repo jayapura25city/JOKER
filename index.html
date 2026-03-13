@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -10,9 +11,26 @@
 
 body{
 font-family:Arial;
-background:#f4f4f4;
 margin:20px;
 text-align:center;
+background-size:cover;
+background-position:center;
+}
+
+.lightMode{
+background-image:url("MODE TERANG.jpg");
+}
+
+.darkMode{
+background-image:url("MODE GELAP.jpg");
+}
+
+.modeBtn{
+position:fixed;
+top:10px;
+right:10px;
+padding:8px 12px;
+z-index:1000;
 }
 
 .container{
@@ -27,37 +45,36 @@ margin-bottom:20px;
 background:white;
 padding:15px;
 border-radius:10px;
-width:230px;
-box-shadow:0 0 8px rgba(0,0,0,0.15);
+width:240px;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
-.bad{border:3px solid red;}
-.warn{border:3px solid #f1c40f;}
-.good{border:3px solid #27ae60;}
+.bad{border:4px solid red;}
+.warn{border:4px solid #f1c40f;}
+.good{border:4px solid #27ae60;}
 
 .name{
 width:100%;
 border:none;
 font-weight:bold;
 text-align:center;
-font-size:16px;
-margin-bottom:4px;
+font-size:18px;
 }
 
 .label{
 color:red;
 font-weight:bold;
-margin-bottom:6px;
+margin:5px 0;
 }
 
 .total{
-font-size:32px;
+font-size:34px;
 margin-bottom:6px;
 }
 
 .shuffle{
 font-size:14px;
-margin-bottom:8px;
+margin-bottom:10px;
 }
 
 .quick{
@@ -71,7 +88,6 @@ margin-bottom:8px;
 padding:8px;
 border:none;
 cursor:pointer;
-font-size:12px;
 }
 
 .pos{
@@ -94,28 +110,18 @@ margin-bottom:6px;
 background:#3498db;
 color:white;
 border:none;
-padding:10px;
+padding:12px;
 width:100%;
 font-size:16px;
-margin-bottom:5px;
+margin-bottom:6px;
 }
 
 .undo{
 background:#f39c12;
 color:white;
 border:none;
-padding:6px;
+padding:8px;
 width:100%;
-}
-
-.controls{
-margin-bottom:20px;
-}
-
-.controls button{
-padding:8px 12px;
-margin:4px;
-cursor:pointer;
 }
 
 .nextRoundBox{
@@ -123,8 +129,8 @@ margin:20px 0;
 }
 
 .nextRoundBox button{
-font-size:20px;
-padding:14px 28px;
+font-size:22px;
+padding:14px 30px;
 background:#2980b9;
 color:white;
 border:none;
@@ -145,30 +151,22 @@ padding:6px;
 text-align:center;
 }
 
-th{background:#eee;}
+.posText{color:#27ae60;font-weight:bold;}
+.negText{color:#e74c3c;font-weight:bold;}
 
-.posText{
-color:#27ae60;
-font-weight:bold;
-}
-
-.negText{
-color:#e74c3c;
-font-weight:bold;
+.sticker{
+width:80px;
+margin-top:6px;
 }
 
 </style>
 </head>
 
-<body>
+<body class="lightMode">
+
+<button class="modeBtn" onclick="toggleMode()">MODE</button>
 
 <h2>Score Game Kartu</h2>
-
-<div class="controls">
-<button onclick="addPlayer()">Tambah Pemain</button>
-<button onclick="removePlayer()">Hapus Pemain</button>
-<button onclick="resetGame()">Reset Game</button>
-</div>
 
 <div id="players" class="container"></div>
 
@@ -196,9 +194,43 @@ let round=0
 let actions=[]
 let shuffleCount=[]
 
+let shuffleStreak=[]
+let winStreak=[]
+
+let shuffleSticker=[]
+let winSticker=[]
+
+let darkMode=false
+
 for(let i=1;i<=4;i++){
+
 players.push({name:"Player "+i,total:0})
 shuffleCount.push(0)
+
+shuffleStreak.push(0)
+winStreak.push(0)
+
+shuffleSticker.push("")
+winSticker.push("")
+
+}
+
+function toggleMode(){
+
+darkMode=!darkMode
+
+if(darkMode){
+
+document.body.classList.remove("lightMode")
+document.body.classList.add("darkMode")
+
+}else{
+
+document.body.classList.remove("darkMode")
+document.body.classList.add("lightMode")
+
+}
+
 }
 
 function renderPlayers(){
@@ -206,10 +238,10 @@ function renderPlayers(){
 let container=document.getElementById("players")
 container.innerHTML=""
 
-let gameStarted = actions.length > 0
+let gameStarted=actions.length>0
 
-let totals = players.map(p=>p.total)
-let min = Math.min(...totals)
+let totals=players.map(p=>p.total)
+let min=Math.min(...totals)
 
 players.forEach((p,i)=>{
 
@@ -236,9 +268,17 @@ cls="warn"
 
 div.className="player "+cls
 
+let stickers=""
+
+if(shuffleSticker[i])
+stickers+=`<img src="${shuffleSticker[i]}" class="sticker">`
+
+if(winSticker[i])
+stickers+=`<img src="${winSticker[i]}" class="sticker">`
+
 div.innerHTML=`
 
-<input class="name" value="${p.name}" onchange="changeName(${i},this.value)">
+<input class="name" value="${p.name}" onchange="players[${i}].name=this.value;renderHeader()">
 
 ${label}
 
@@ -246,10 +286,13 @@ ${label}
 
 <div class="shuffle">Mengocok : ${shuffleCount[i]}x</div>
 
+${stickers}
+
 <div class="quick">
 
 <button class="pos" onclick="addScore(${i},250)">Masuk Joker +250</button>
 <button class="pos" onclick="addScore(${i},150)">Masuk AS +150</button>
+
 <button class="neg" onclick="addScore(${i},-250)">Kena Joker -250</button>
 <button class="neg" onclick="addScore(${i},-150)">Kena AS -150</button>
 
@@ -270,13 +313,6 @@ container.appendChild(div)
 
 })
 
-updateTotals()
-
-}
-
-function changeName(i,name){
-players[i].name=name
-renderHeader()
 }
 
 function renderHeader(){
@@ -304,11 +340,11 @@ let html=`<td>${i+1}</td>`
 
 players.forEach((p,pi)=>{
 
-let val=r[pi] ?? ""
+let val=r[pi]??""
 
 let cls=""
-if(val>0) cls="posText"
-if(val<0) cls="negText"
+if(val>0)cls="posText"
+if(val<0)cls="negText"
 
 html+=`<td class="${cls}">${val||""}</td>`
 
@@ -321,26 +357,34 @@ tbody.appendChild(tr)
 
 }
 
-function updateTotals(){
-document.querySelectorAll(".total").forEach((el,i)=>{
-el.innerText=players[i].total
-})
-}
-
 function addScore(player,value){
 
-players[player].total += value
+players[player].total+=value
 
 history[round][player]=(history[round][player]||0)+value
 
-actions.push({
-player:player,
-value:value,
-round:round
-})
+actions.push({player,value,round})
 
-renderHistory()
+if(value==250||value==150){
+
+winStreak[player]++
+
+if(winStreak[player]>=3){
+
+let r=Math.floor(Math.random()*3)+1
+winSticker[player]="KETAWA "+r+".gif"
+
+}
+
+}else{
+
+winStreak[player]=0
+winSticker[player]=""
+
+}
+
 renderPlayers()
+renderHistory()
 
 }
 
@@ -349,8 +393,11 @@ function manualAdd(player,input){
 let val=parseInt(input.previousElementSibling.value)
 
 if(!isNaN(val)){
+
 addScore(player,val)
+
 input.previousElementSibling.value=""
+
 }
 
 }
@@ -362,8 +409,10 @@ if(e.key==="Enter"){
 let val=parseInt(input.value)
 
 if(!isNaN(val)){
+
 addScore(player,val)
 input.value=""
+
 }
 
 }
@@ -378,20 +427,19 @@ if(actions[i].player===player){
 
 let act=actions[i]
 
-players[player].total -= act.value
-history[act.round][player] -= act.value
+players[player].total-=act.value
+history[act.round][player]-=act.value
 
 actions.splice(i,1)
 
-renderHistory()
 renderPlayers()
+renderHistory()
 
 return
-}
 
 }
 
-alert("Tidak ada aksi untuk di undo")
+}
 
 }
 
@@ -402,10 +450,10 @@ let min=Math.min(...players.map(p=>p.total))
 let candidates=[]
 
 players.forEach((p,i)=>{
-if(p.total===min) candidates.push(i)
+if(p.total===min)candidates.push(i)
 })
 
-if(candidates.length===1) return candidates[0]
+if(candidates.length===1)return candidates[0]
 
 for(let r=round;r>=0;r--){
 
@@ -413,16 +461,19 @@ let minVal=Infinity
 let chosen=null
 
 candidates.forEach(i=>{
-let val=history[r][i] ?? 0
+
+let val=history[r][i]??0
+
 if(val<minVal){
 minVal=val
 chosen=i
 }
+
 })
 
-let check=candidates.filter(i=>(history[r][i] ?? 0)===minVal)
+let check=candidates.filter(i=>(history[r][i]??0)===minVal)
 
-if(check.length===1) return chosen
+if(check.length===1)return chosen
 
 candidates=check
 
@@ -437,65 +488,28 @@ function nextRound(){
 if(actions.length>0){
 
 let shuffler=getShuffler()
+
 shuffleCount[shuffler]++
+shuffleStreak[shuffler]++
+
+if(shuffleStreak[shuffler]>=3){
+
+let r=Math.floor(Math.random()*6)+1
+shuffleSticker[shuffler]="KOCOK "+r+".gif"
+
+}
+
+players.forEach((p,i)=>{
+if(i!==shuffler){
+shuffleStreak[i]=0
+shuffleSticker[i]=""
+}
+})
 
 }
 
 round++
 history.push([])
-
-renderPlayers()
-renderHistory()
-
-}
-
-function addPlayer(){
-
-players.push({
-name:"Player "+(players.length+1),
-total:0
-})
-
-shuffleCount.push(0)
-
-renderPlayers()
-renderHeader()
-renderHistory()
-
-}
-
-function removePlayer(){
-
-if(players.length<=1){
-alert("Minimal 1 pemain")
-return
-}
-
-if(!confirm("Hapus pemain terakhir?")) return
-
-players.pop()
-shuffleCount.pop()
-
-history.forEach(r=>{
-r.pop()
-})
-
-renderPlayers()
-renderHeader()
-renderHistory()
-
-}
-
-function resetGame(){
-
-if(!confirm("Reset semua skor?")) return
-
-players.forEach(p=>p.total=0)
-
-history=[[]]
-round=0
-actions=[]
-shuffleCount=players.map(()=>0)
 
 renderPlayers()
 renderHistory()
