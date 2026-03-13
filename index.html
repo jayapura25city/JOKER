@@ -17,13 +17,8 @@ background-size:cover;
 background-position:center;
 }
 
-.lightMode{
-background-image:url("MODE TERANG.jpg");
-}
-
-.darkMode{
-background-image:url("MODE GELAP.jpg");
-}
+.lightMode{background-image:url("MODE TERANG.jpg");}
+.darkMode{background-image:url("MODE GELAP.jpg");}
 
 .modeBtn{
 position:fixed;
@@ -31,6 +26,16 @@ top:10px;
 right:10px;
 padding:8px 12px;
 z-index:1000;
+}
+
+.controls{
+margin-bottom:15px;
+}
+
+.controls button{
+padding:8px 12px;
+margin:4px;
+cursor:pointer;
 }
 
 .container{
@@ -64,17 +69,17 @@ font-size:18px;
 .label{
 color:red;
 font-weight:bold;
-margin:5px 0;
+margin:4px 0;
 }
 
 .total{
 font-size:34px;
-margin-bottom:6px;
+margin-bottom:4px;
 }
 
 .shuffle{
 font-size:14px;
-margin-bottom:10px;
+margin-bottom:8px;
 }
 
 .quick{
@@ -90,15 +95,8 @@ border:none;
 cursor:pointer;
 }
 
-.pos{
-background:#27ae60;
-color:white;
-}
-
-.neg{
-background:#e74c3c;
-color:white;
-}
+.pos{background:#27ae60;color:white;}
+.neg{background:#e74c3c;color:white;}
 
 .scoreInput{
 width:100%;
@@ -168,6 +166,12 @@ margin-top:6px;
 
 <h2>Score Game Kartu</h2>
 
+<div class="controls">
+<button onclick="addPlayer()">Tambah Pemain</button>
+<button onclick="removePlayer()">Hapus Pemain</button>
+<button onclick="resetGame()">Reset Game</button>
+</div>
+
 <div id="players" class="container"></div>
 
 <div class="nextRoundBox">
@@ -175,15 +179,10 @@ margin-top:6px;
 </div>
 
 <table id="history">
-
 <thead>
-<tr id="headerRow">
-<th>Ronde</th>
-</tr>
+<tr id="headerRow"><th>Ronde</th></tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 <script>
@@ -192,8 +191,8 @@ let players=[]
 let history=[[]]
 let round=0
 let actions=[]
-let shuffleCount=[]
 
+let shuffleCount=[]
 let shuffleStreak=[]
 let winStreak=[]
 
@@ -205,8 +204,8 @@ let darkMode=false
 for(let i=1;i<=4;i++){
 
 players.push({name:"Player "+i,total:0})
-shuffleCount.push(0)
 
+shuffleCount.push(0)
 shuffleStreak.push(0)
 winStreak.push(0)
 
@@ -230,6 +229,13 @@ document.body.classList.remove("darkMode")
 document.body.classList.add("lightMode")
 
 }
+
+}
+
+function randomSticker(prefix,max){
+
+let r=Math.floor(Math.random()*max)+1
+return prefix+" "+r+".gif"
 
 }
 
@@ -369,12 +375,8 @@ if(value==250||value==150){
 
 winStreak[player]++
 
-if(winStreak[player]>=3){
-
-let r=Math.floor(Math.random()*3)+1
-winSticker[player]="KETAWA "+r+".gif"
-
-}
+if(winStreak[player]>=3)
+winSticker[player]=randomSticker("KETAWA",3)
 
 }else{
 
@@ -395,7 +397,6 @@ let val=parseInt(input.previousElementSibling.value)
 if(!isNaN(val)){
 
 addScore(player,val)
-
 input.previousElementSibling.value=""
 
 }
@@ -453,32 +454,6 @@ players.forEach((p,i)=>{
 if(p.total===min)candidates.push(i)
 })
 
-if(candidates.length===1)return candidates[0]
-
-for(let r=round;r>=0;r--){
-
-let minVal=Infinity
-let chosen=null
-
-candidates.forEach(i=>{
-
-let val=history[r][i]??0
-
-if(val<minVal){
-minVal=val
-chosen=i
-}
-
-})
-
-let check=candidates.filter(i=>(history[r][i]??0)===minVal)
-
-if(check.length===1)return chosen
-
-candidates=check
-
-}
-
 return candidates[0]
 
 }
@@ -492,12 +467,8 @@ let shuffler=getShuffler()
 shuffleCount[shuffler]++
 shuffleStreak[shuffler]++
 
-if(shuffleStreak[shuffler]>=3){
-
-let r=Math.floor(Math.random()*6)+1
-shuffleSticker[shuffler]="KOCOK "+r+".gif"
-
-}
+if(shuffleStreak[shuffler]>=3)
+shuffleSticker[shuffler]=randomSticker("KOCOK",6)
 
 players.forEach((p,i)=>{
 if(i!==shuffler){
@@ -516,11 +487,70 @@ renderHistory()
 
 }
 
+function addPlayer(){
+
+players.push({name:"Player "+(players.length+1),total:0})
+
+shuffleCount.push(0)
+shuffleStreak.push(0)
+winStreak.push(0)
+
+shuffleSticker.push("")
+winSticker.push("")
+
+history.forEach(r=>r.push(0))
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+}
+
+function removePlayer(){
+
+if(players.length<=1)return
+
+players.pop()
+
+shuffleCount.pop()
+shuffleStreak.pop()
+winStreak.pop()
+
+shuffleSticker.pop()
+winSticker.pop()
+
+history.forEach(r=>r.pop())
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+}
+
+function resetGame(){
+
+players.forEach(p=>p.total=0)
+
+history=[[]]
+round=0
+actions=[]
+
+shuffleCount=players.map(()=>0)
+shuffleStreak=players.map(()=>0)
+winStreak=players.map(()=>0)
+
+shuffleSticker=players.map(()=> "")
+winSticker=players.map(()=> "")
+
+renderPlayers()
+renderHistory()
+
+}
+
 renderPlayers()
 renderHeader()
 renderHistory()
 
 </script>
-
 </body>
 </html>
